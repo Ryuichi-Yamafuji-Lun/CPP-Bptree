@@ -47,6 +47,7 @@ NODE *
 insert_in_leaf(NODE *leaf, int key, DATA *data)
 {
 	int i, j;
+	//if key is less than the current lowest allocate the lowest spot to the key
 	if (key < leaf->key[0]) {
 		for (i = leaf->nkey; i > 0; i--) {
 			leaf->chi[i] = leaf->chi[i-1] ;
@@ -59,6 +60,7 @@ insert_in_leaf(NODE *leaf, int key, DATA *data)
 		for (i = 0; i < leaf->nkey; i++) {
 			if (key < leaf->key[i]) break;
 		}
+		//find where key fits in by placing key right above the value less than or equal to the key
 		for (j = leaf->nkey; j > i; j--) {		
 			leaf->chi[j] = leaf->chi[j-1] ;
 			leaf->key[j] = leaf->key[j-1] ;

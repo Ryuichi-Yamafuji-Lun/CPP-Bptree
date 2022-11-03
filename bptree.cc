@@ -101,7 +101,7 @@ insert(int key, DATA *data)
 	if (leaf->nkey < (N-1)) {
 		insert_in_leaf(leaf, key, data);
 	}
-	else { // split
+	else { // SPLIT
     // future work
 	}
 }

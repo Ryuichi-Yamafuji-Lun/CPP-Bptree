@@ -11,6 +11,7 @@ using namespace std;
 #define MAX_OBJ (1000*1000)
 #define N 4
 
+
 typedef struct _DATA {
 	int key;
 	int val;

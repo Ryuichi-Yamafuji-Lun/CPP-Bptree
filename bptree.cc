@@ -30,6 +30,19 @@ print_tree(NODE *node)
 	printf("\n"); fflush(stdout);
 }
 
+void 
+erase(NODE *leaf){
+	int i;
+	for (i = 0; i < N - 2; i++) {
+		leaf->chi[i] = nullptr;
+	}
+	for (i = 0; i < N - 1; i++) {
+		leaf->key[i] = 0; 
+	}
+	leaf->nkey = 0;
+}
+
+
 NODE *
 find_leaf(NODE *node, int key)
 {
@@ -124,8 +137,20 @@ alloc_temp(TEMP *L)
 }
 
 void 
+insert_in_memory(TEMP *T, NODE *node)
+{
+	int i;
+	for (i = 0; i < node->nkey; i++) {
+		T->chi[i] = node->chi[i];
+		T->key[i] = node->key[i];
+	}
+	T->nkey = node->nkey;
+}
+
+void 
 insert_in_parent(NODE *leaf, int key, NODE *L)
 {
+	//if leaf is the root of tree then make node R the root
 	int i, j;
 	if (leaf == Root) {
 		//new node R
@@ -144,6 +169,7 @@ insert_in_parent(NODE *leaf, int key, NODE *L)
 	}
 	//set P to N's parent
 	leaf->parent = Root;
+	//leaf split
 	//if P has space then
 	if (Root->nkey < N - 1) 
 	{
@@ -156,7 +182,6 @@ insert_in_parent(NODE *leaf, int key, NODE *L)
 				Root->chi[i + 1] = Root->chi[i];
 			}
 			Root->key[0] = L->key[0];
-			Root->nkey++;
 			Root->chi[1] = L;
 		}
 		else {
@@ -169,26 +194,62 @@ insert_in_parent(NODE *leaf, int key, NODE *L)
 			} 
 			Root->key[j] = L->key[0];
 			Root->chi[j + 1] = L;
-			Root->nkey++;
 		}
-		
+		Root->nkey++;
+
 		return;
 	}
-
-		
-	
-}
-
-void
-insert_in_memory(TEMP *T, NODE *leaf, int key, DATA *data) {
-	int i;
-	for (i = 0; i < leaf->nkey; i++) {
-		T->chi[i] = leaf->chi[i];
-		T->key[i] = leaf->key[i];
+	//non-leaf split
+	else {
+		int i, j;
+		// Copy P to a block of memory T that hold P and (new key and pointer)
+		TEMP *T = alloc_temp(NULL);
+		insert_in_memory(T, Root);
+		// Insert(new key and pointer) into T just after N
+		if (L->key[0] < T->key[0]) 
+		{
+			for (i = T->nkey; i > 0; i--)
+			{
+				T->key[i] = T->key[i - 1];
+				T->chi[i + 1] = T->chi[i];
+			}
+			T->key[0] = L->key[0];
+			T->chi[1] = L;
+		}
+		else {
+			for (i = 0; i <= T->nkey; i++) {
+				if (L->key[0] < T->key[i]) break;
+			}
+			for (j = T->nkey; j >= i; j--) {		
+				T->chi[j + 1] = T->chi[j] ;
+				T->key[j] = T->key[j-1] ;
+			} 
+			T->key[j] = L->key[0];
+			T->chi[j + 1] = L;
+		}
+		T->nkey++;
+		// Erase all entries from P
+		erase(Root);
+		// Create node P'
+		NODE *P = alloc_leaf(NULL);
+		// Copy T.P1, . . . , T.P[(n+1)/2] into P
+		for (i = 0; i < ceil((N + 1)/2); i++) {
+			Root->chi[i] = T->chi[i];
+			Root->key[i] = T->key[i];
+			Root->nkey++;
+		}
+		// Let K" = T.K[(n+1)/2]
+		int K = T->key[(N + 1)/2];
+		// Copy T.P[(n+1)/2]+1, . . . , T.Pn+1 into P'
+		for (j = ceil((N + 1)/2); j < N; j++) {
+			P->chi[j] = T->chi[j];
+			P->key[j] = T->key[j];
+			P->nkey++;
+		}
+		// insert in parent(P, K", P')
+		insert_in_parent(Root, K, P);
 	}
-	T->nkey = leaf->nkey;
-	//insert new key and pointer to data
-	sort_temp(T, key, data);
+		
 }
 
 void
@@ -201,22 +262,10 @@ set_ptr(NODE *leaf, NODE *L) {
 }
 
 void 
-erase(NODE *leaf){
-	int i;
-	for (i = 0; i < N - 2; i++) {
-		leaf->chi[i] = nullptr;
-	}
-	for (i = 0; i < N - 1; i++) {
-		leaf->key[i] = 0; 
-	}
-	leaf->nkey = 0;
-}
-
-void 
 insert(int key, DATA *data)
 {
 	NODE *leaf;
-
+	//if not root node then leaf is root
 	if (Root == NULL) {
 		leaf = alloc_leaf(NULL);
 		Root = leaf;
@@ -224,6 +273,7 @@ insert(int key, DATA *data)
 	else {
     leaf = find_leaf(Root, key);
   	}
+	//if space in leaf then insert
 	if (leaf->nkey < (N-1)) {
 		insert_in_leaf(leaf, key, data);
 	}
@@ -233,7 +283,10 @@ insert(int key, DATA *data)
 		NODE *L = alloc_leaf(NULL);
 		//Copy leaf key and data to a block of memory T that can hold N pairs
 		TEMP *T = alloc_temp(NULL);
-		insert_in_memory(T, leaf, key, data);
+
+		insert_in_memory(T, leaf);
+		//insert new key and pointer to data
+		sort_temp(T, key, data);
 		//Set ptr
 		set_ptr(leaf, L);
 		//erase leaf.ptr1 through leaf.keyn-1 from leaf

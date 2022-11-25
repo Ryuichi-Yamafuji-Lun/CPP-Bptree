@@ -31,15 +31,15 @@ print_tree(NODE *node)
 }
 
 void 
-erase(NODE *leaf){
+erase(NODE *node){
 	int i;
 	for (i = 0; i < N - 2; i++) {
-		leaf->chi[i] = nullptr;
+		node->chi[i] = nullptr;
 	}
 	for (i = 0; i < N - 1; i++) {
-		leaf->key[i] = 0; 
+		node->key[i] = 0; 
 	}
-	leaf->nkey = 0;
+	node->nkey = 0;
 }
 
 
@@ -100,7 +100,7 @@ sort_temp(TEMP *T, int key, DATA *data)
 		T->chi[0] = (NODE *)data;
 	}
 	else {
-		for (i = 0; i <= T->nkey; i++) {
+		for (i = 0; i < T->nkey; i++) {
 			if (key < T->key[i]) break;
 		}
 		//find where key fits in by placing key right above the value less than or equal to the key
@@ -108,11 +108,13 @@ sort_temp(TEMP *T, int key, DATA *data)
 			T->chi[j] = T->chi[j-1];
 			T->key[j] = T->key[j-1];
 		} 
-		T->key[j] = key;
-		T->chi[j] = (NODE *)data;
+		//place new key
+		T->key[i] = key;
+		T->chi[i] = (NODE *)data;
 	}
 	return T;
 }
+
 NODE *
 alloc_leaf(NODE *parent)
 {
@@ -144,6 +146,7 @@ insert_in_memory(TEMP *T, NODE *node)
 		T->chi[i] = node->chi[i];
 		T->key[i] = node->key[i];
 	}
+	T->chi[node->nkey] = node->chi[node->nkey];
 	T->nkey = node->nkey;
 }
 
@@ -156,7 +159,7 @@ insert_in_parent(NODE *leaf, int key, NODE *L)
 		//new node R
 		NODE *R = alloc_leaf(NULL);
 		//put leaf, key, L into R
-		R->key[0] = L->key[0];
+		R->key[0] = key;
 		R->chi[0] = leaf;
 		R->chi[1] = L;
 		leaf->parent = R;
@@ -240,12 +243,16 @@ insert_in_parent(NODE *leaf, int key, NODE *L)
 		}
 		// Let K" = T.K[(n+1)/2]
 		int K = T->key[(N + 1)/2];
+		int l = 0;
 		// Copy T.P[(n+1)/2]+1, . . . , T.Pn+1 into P'
-		for (j = ceil((N + 1)/2); j < N; j++) {
-			P->chi[j] = T->chi[j];
-			P->key[j] = T->key[j];
+		for (j = ceil((N + 1)/2) + 1; j < N; j++) {
+			P->chi[l] = T->chi[j];
+			P->key[l] = T->key[j];
+			l++;
 			P->nkey++;
 		}
+		P->chi[l] = T->chi[j];
+
 		// insert in parent(P, K", P')
 		insert_in_parent(Root, K, P);
 	}

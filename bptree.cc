@@ -235,24 +235,24 @@ insert_in_parent(NODE *leaf, int key, NODE *L)
 		erase(Root);
 		// Create node P'
 		NODE *P = alloc_leaf(NULL);
+		P->isLeaf = false;
 		// Copy T.P1, . . . , T.P[(n+1)/2] into P
-		for (i = 0; i < ceil((N + 1)/2); i++) {
+		int i_split = ceil((N + 1)/2);
+		for (i = 0; i < i_split; i++) {
 			Root->chi[i] = T->chi[i];
 			Root->key[i] = T->key[i];
 			Root->nkey++;
 		}
 		// Let K" = T.K[(n+1)/2]
-		int K = T->key[(N + 1)/2];
+		int K = T->key[i_split];
 		int l = 0;
 		// Copy T.P[(n+1)/2]+1, . . . , T.Pn+1 into P'
-		for (j = ceil((N + 1)/2) + 1; j < N; j++) {
+		for (j = i_split + 1; j <= N; j++) {
 			P->chi[l] = T->chi[j];
-			P->key[l] = T->key[j];
 			l++;
-			P->nkey++;
 		}
-		P->chi[l] = T->chi[j];
-
+		P->key[0] = T->key[i_split + 1];
+		P->nkey++;
 		// insert in parent(P, K", P')
 		insert_in_parent(Root, K, P);
 	}

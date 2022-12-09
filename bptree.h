@@ -15,6 +15,7 @@ using namespace std;
 typedef struct _DATA {
 	int key;
 	int val;
+	pthread_rwlock_t rwlock;
 	struct _DATA *next;
 } DATA;
 

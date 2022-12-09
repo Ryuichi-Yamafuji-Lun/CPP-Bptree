@@ -346,7 +346,11 @@ main(int argc, char *argv[])
 	printf("-----Insert-----\n");
 	begin = cur_time();
   while (true) {
-		insert(interactive(), NULL);
+	DATA *record = (DATA *)malloc(sizeof(DATA));
+	record->val = 3;
+	int rc = pthread_rwlock_init(&(record->rwlock), NULL);
+	if(rc == -1) ERR;
+	insert(interactive(), record);	
     print_tree(Root);
   }
 	end = cur_time();

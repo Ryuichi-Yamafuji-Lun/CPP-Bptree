@@ -339,21 +339,20 @@ interactive()
 int
 main(int argc, char *argv[])
 {
-  struct timeval begin, end;
-
+	struct timeval begin, end;
+	int x = 0;
 	init_root();
-
-	printf("-----Insert-----\n");
 	begin = cur_time();
-  while (true) {
-	DATA *record = (DATA *)malloc(sizeof(DATA));
-	record->val = 3;
-	int rc = pthread_rwlock_init(&(record->rwlock), NULL);
-	if(rc == -1) ERR;
-	insert(interactive(), record);	
-    print_tree(Root);
-  }
+  	while (x < 100) {
+		DATA *record = (DATA *)malloc(sizeof(DATA));
+		record->val = 3;
+		int rc = pthread_rwlock_init(&(record->rwlock), NULL);
+		if(rc == -1) ERR;
+		insert(x, record);	
+		//print_tree(Root);
+		x++;
+  	}
 	end = cur_time();
-
+	printf(end);
 	return 0;
 }

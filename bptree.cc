@@ -343,7 +343,7 @@ main(int argc, char *argv[])
 	int x = 0;
 	init_root();
 	begin = cur_time();
-  	while (x < 100) {
+  	while (x < 10000000) {
 		DATA *record = (DATA *)malloc(sizeof(DATA));
 		record->val = 3;
 		int rc = pthread_rwlock_init(&(record->rwlock), NULL);
@@ -353,6 +353,6 @@ main(int argc, char *argv[])
 		x++;
   	}
 	end = cur_time();
-	printf(end);
+	printf("Time: %ld seconds\n", end.tv_sec - begin.tv_sec);
 	return 0;
 }

@@ -271,6 +271,7 @@ set_ptr(NODE *leaf, NODE *L) {
 void 
 insert(int key, DATA *data)
 {
+	//proceed to insert
 	NODE *leaf;
 	//if not root node then leaf is root
 	if (Root == NULL) {
@@ -319,6 +320,39 @@ insert(int key, DATA *data)
 	}
 }
 
+int
+search_record(int key, NODE *leaf)
+{
+	int i;
+	//search for record
+	//find chi array corresponding leaf node
+	for (i = 0; i < leaf->nkey - 1; i++) {
+		if (key < leaf->key[i]) break;
+	}
+
+	return i;
+}
+
+void
+update_val(int key, DATA *record)
+{	
+	NODE *leaf;
+	int value;
+	//search for the location of the record
+	//find leaf
+	leaf = find_leaf(Root, key);
+	int rc_location = search_record(key, leaf);
+	//go into record
+	record = (DATA *)leaf->chi[rc_location];
+	//check if 
+	int rc = pthread_rwlock_wrlock(&(record->rwlock));
+	if(rc == -1) ERR;
+	std::cout << "Value: ";
+	std::cin >> value;
+	record->val = value;
+	pthread_rwlock_unlock(&(record->rwlock));
+}
+
 void
 init_root(void)
 {
@@ -328,30 +362,35 @@ init_root(void)
 int 
 interactive()
 {
-  int key;
+	int key;
 
-  std::cout << "Key: ";
-  std::cin >> key;
+	std::cout << "Key: ";
+	std::cin >> key;
 
-  return key;
+	return key;
 }
+
 
 int
 main(int argc, char *argv[])
 {
 	struct timeval begin, end;
+
 	int x = 0;
 	init_root();
 	begin = cur_time();
-  	while (x < 10000000) {
-		DATA *record = (DATA *)malloc(sizeof(DATA));
-		record->val = 3;
+	DATA *record;
+  	while (x < 10) {
+		record = (DATA *)malloc(sizeof(DATA));
+		record->val = x;
 		int rc = pthread_rwlock_init(&(record->rwlock), NULL);
 		if(rc == -1) ERR;
 		insert(x, record);	
-		//print_tree(Root);
 		x++;
   	}
+	//get key
+	int key = interactive();
+	update_val(key, record);
 	end = cur_time();
 	printf("Time: %ld seconds\n", end.tv_sec - begin.tv_sec);
 	return 0;

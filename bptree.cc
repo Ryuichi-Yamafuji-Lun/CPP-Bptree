@@ -2,6 +2,8 @@
 #include <vector>
 #include <sys/time.h>
 
+#define num_threads 16
+
 struct timeval
 cur_time(void)
 {
@@ -320,37 +322,19 @@ insert(int key, DATA *data)
 	}
 }
 
-int
-search_record(int key, NODE *leaf)
+DATA *
+search_record(int key)
 {
+	NODE *leaf;
 	int i;
-	//search for record
+	//find leaf
+	leaf = find_leaf(Root, key);
 	//find chi array corresponding leaf node
 	for (i = 0; i < leaf->nkey - 1; i++) {
 		if (key < leaf->key[i]) break;
 	}
-
-	return i;
-}
-
-void
-update_val(int key, DATA *record)
-{	
-	NODE *leaf;
-	int value;
-	//search for the location of the record
-	//find leaf
-	leaf = find_leaf(Root, key);
-	int rc_location = search_record(key, leaf);
-	//go into record
-	record = (DATA *)leaf->chi[rc_location];
-	//check if 
-	int rc = pthread_rwlock_wrlock(&(record->rwlock));
-	if(rc == -1) ERR;
-	std::cout << "Value: ";
-	std::cin >> value;
-	record->val = value;
-	pthread_rwlock_unlock(&(record->rwlock));
+	//return record
+	return (DATA *)leaf->chi[i];
 }
 
 void
@@ -370,6 +354,25 @@ interactive()
 	return key;
 }
 
+void 
+update_val(int num_data, DATA *record)
+{	
+	int value;
+	//get key
+	int key = num_data;
+	//1 + (rand() % num_data);
+	//search for the location of the record
+	//go into record
+	record = search_record(key);
+	//check if 
+	int rc = pthread_rwlock_wrlock(&(record->rwlock));
+	if(rc == -1) ERR;
+	std::cout << "Value: ";
+	std::cin >> value;
+	//value = 7;
+	record->val = value;
+	pthread_rwlock_unlock(&(record->rwlock));
+}
 
 int
 main(int argc, char *argv[])
@@ -379,8 +382,10 @@ main(int argc, char *argv[])
 	int x = 0;
 	init_root();
 	begin = cur_time();
+	pthread_t thread_id[num_threads];
+
 	DATA *record;
-  	while (x < 10) {
+  	while (x < 100) {
 		record = (DATA *)malloc(sizeof(DATA));
 		record->val = x;
 		int rc = pthread_rwlock_init(&(record->rwlock), NULL);
@@ -388,9 +393,14 @@ main(int argc, char *argv[])
 		insert(x, record);	
 		x++;
   	}
-	//get key
-	int key = interactive();
-	update_val(key, record);
+	//16 threads for updates
+	for(int i = 0; i < num_threads; i++) {
+		pthread_create(&thread_id[i], NULL, update_val(x, record), NULL);
+	}
+	//wait till all thread finishes
+	for(int j = 0; j < num_threads; j++) {
+		pthread_join(&thread_id[j], NULL);
+	}
 	end = cur_time();
 	printf("Time: %ld seconds\n", end.tv_sec - begin.tv_sec);
 	return 0;

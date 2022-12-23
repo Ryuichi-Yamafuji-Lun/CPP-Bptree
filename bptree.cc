@@ -3,6 +3,7 @@
 #include <sys/time.h>
 
 #define num_threads 16
+#define num_of_data 1000000
 
 struct timeval
 cur_time(void)
@@ -355,23 +356,45 @@ interactive()
 }
 
 void 
-update_val(int num_data, DATA *record)
+update_val()
 {	
+	DATA *record;
 	int value;
-	//get key
-	int key = num_data;
-	//1 + (rand() % num_data);
+	int key = 1 + (rand() % num_of_data);
 	//search for the location of the record
 	//go into record
 	record = search_record(key);
 	//check if 
 	int rc = pthread_rwlock_wrlock(&(record->rwlock));
 	if(rc == -1) ERR;
-	std::cout << "Value: ";
-	std::cin >> value;
-	//value = 7;
+	// std::cout << "Value: ";
+	// std::cin >> value;
+	value = 7;
 	record->val = value;
 	pthread_rwlock_unlock(&(record->rwlock));
+}
+
+void 
+read_only(){
+	DATA *record;
+	int key = 1 + (rand() % num_of_data);
+	record = search_record(key);
+	int rc = pthread_rwlock_rdlock(&(record->rwlock));
+	if(rc == -1) ERR;
+	printf("Read value at key %d: %d\n", key, record->val);
+	pthread_rwlock_unlock(&(record->rwlock));
+}
+
+void *read_or_write(void *argp){
+	int r_or_w = 1 + (rand() % num_of_data);
+	if(r_or_w % 2 == 0){
+		//read
+		read_only();
+	} else {
+		//update
+		update_val();
+	}
+	return NULL;
 }
 
 int
@@ -385,7 +408,7 @@ main(int argc, char *argv[])
 	pthread_t thread_id[num_threads];
 
 	DATA *record;
-  	while (x < 100) {
+  	while (x < num_of_data) {
 		record = (DATA *)malloc(sizeof(DATA));
 		record->val = x;
 		int rc = pthread_rwlock_init(&(record->rwlock), NULL);
@@ -395,13 +418,13 @@ main(int argc, char *argv[])
   	}
 	//16 threads for updates
 	for(int i = 0; i < num_threads; i++) {
-		pthread_create(&thread_id[i], NULL, update_val(x, record), NULL);
+		pthread_create(&thread_id[i], NULL, read_or_write, NULL);
 	}
 	//wait till all thread finishes
 	for(int j = 0; j < num_threads; j++) {
-		pthread_join(&thread_id[j], NULL);
+		pthread_join(thread_id[j], NULL);
 	}
 	end = cur_time();
-	printf("Time: %ld seconds\n", end.tv_sec - begin.tv_sec);
+	printf("Time: %d seconds\n", end.tv_usec - begin.tv_usec);
 	return 0;
 }

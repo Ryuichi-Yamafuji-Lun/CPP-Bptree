@@ -385,7 +385,8 @@ read_only(){
 	pthread_rwlock_unlock(&(record->rwlock));
 }
 
-void *read_or_write(void *argp){
+void *
+read_or_write(void *argp){
 	int r_or_w = 1 + (rand() % num_of_data);
 	if(r_or_w % 2 == 0){
 		//read

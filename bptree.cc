@@ -355,6 +355,7 @@ interactive()
 	return key;
 }
 
+//update through binary tree 
 void* 
 update_val(void* argp)
 {	
@@ -375,6 +376,7 @@ update_val(void* argp)
 	return NULL;
 }
 
+//read record through binary tree
 void 
 read_only(){
 	DATA *record;
@@ -386,6 +388,7 @@ read_only(){
 	pthread_rwlock_unlock(&(record->rwlock));
 }
 
+//one thread scans through the entire record
 void*
 scan(void* argp){
 	DATA *record;
@@ -404,6 +407,7 @@ scan(void* argp){
 	
 }
 
+//read or write random 
 // void *
 // read_or_write(void *argp){
 // 	int r_or_w = 1 + (rand() % num_of_data);

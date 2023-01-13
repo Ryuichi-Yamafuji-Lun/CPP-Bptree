@@ -2,8 +2,8 @@
 #include <vector>
 #include <sys/time.h>
 
-#define num_threads 16
-#define num_of_data 1000000
+#define num_threads 4
+#define num_of_data 10000
 
 struct timeval
 cur_time(void)
@@ -355,8 +355,8 @@ interactive()
 	return key;
 }
 
-void 
-update_val()
+void* 
+update_val(void* argp)
 {	
 	DATA *record;
 	int value;
@@ -372,6 +372,7 @@ update_val()
 	value = 7;
 	record->val = value;
 	pthread_rwlock_unlock(&(record->rwlock));
+	return NULL;
 }
 
 void 
@@ -385,18 +386,38 @@ read_only(){
 	pthread_rwlock_unlock(&(record->rwlock));
 }
 
-void *
-read_or_write(void *argp){
-	int r_or_w = 1 + (rand() % num_of_data);
-	if(r_or_w % 2 == 0){
-		//read
-		read_only();
-	} else {
-		//update
-		update_val();
+void*
+scan(void* argp){
+	DATA *record;
+	int key = 0;
+	record = search_record(key);
+	while (record != NULL){
+		int rc = pthread_rwlock_rdlock(&(record->rwlock));
+		if(rc == -1) ERR;
+		printf("Read value: %d at %d\n", record->val, key);
+		pthread_rwlock_unlock(&(record->rwlock));
+		record = record->next;
+		key++;
 	}
+
 	return NULL;
+	
 }
+
+// void *
+// read_or_write(void *argp){
+// 	int r_or_w = 1 + (rand() % num_of_data);
+	
+// 	if(r_or_w == 0){
+// 		//read
+// 		read_only();
+// 	} else {
+// 		//update
+// 		update_val();
+// 	}
+// 	return NULL;
+// }
+
 
 int
 main(int argc, char *argv[])
@@ -408,18 +429,33 @@ main(int argc, char *argv[])
 	begin = cur_time();
 	pthread_t thread_id[num_threads];
 
-	DATA *record;
-  	while (x < num_of_data) {
+	DATA *record, *head, *tail;
+	head = NULL;
+  	while (x <= num_of_data) {
 		record = (DATA *)malloc(sizeof(DATA));
 		record->val = x;
 		int rc = pthread_rwlock_init(&(record->rwlock), NULL);
 		if(rc == -1) ERR;
+		if (head == NULL){
+			head = record;
+			tail = record;
+		}
+		else{
+			tail->next = record;
+			tail = record;
+		}
 		insert(x, record);	
 		x++;
   	}
-	//16 threads for updates
+
+	//n threads for updates
 	for(int i = 0; i < num_threads; i++) {
-		pthread_create(&thread_id[i], NULL, read_or_write, NULL);
+		if (i != 0){
+			pthread_create(&thread_id[i], NULL, update_val, NULL);
+		} else {
+			pthread_create(&thread_id[i], NULL, scan, NULL);
+		}
+		
 	}
 	//wait till all thread finishes
 	for(int j = 0; j < num_threads; j++) {

@@ -3,7 +3,7 @@
 #include <sys/time.h>
 
 #define num_threads 4
-#define num_of_data 10000
+#define num_of_data 10
 
 struct timeval
 cur_time(void)
@@ -355,6 +355,13 @@ interactive()
 	return key;
 }
 
+void
+back_off(DATA * record){
+	sleep(rand() % 20 + 1);
+	int rc = pthread_rwlock_init(&(record->rwlock), NULL);
+	if (rc == -1) ERR;
+}
+
 //update through binary tree 
 void* 
 update_val(void* argp)
@@ -367,7 +374,9 @@ update_val(void* argp)
 	record = search_record(key);
 	//check if 
 	int rc = pthread_rwlock_wrlock(&(record->rwlock));
-	if(rc == -1) ERR;
+	if(rc == -1){
+		back_off(record);
+	}
 	// std::cout << "Value: ";
 	// std::cin >> value;
 	value = 7;
@@ -383,7 +392,9 @@ read_only(){
 	int key = 1 + (rand() % num_of_data);
 	record = search_record(key);
 	int rc = pthread_rwlock_rdlock(&(record->rwlock));
-	if(rc == -1) ERR;
+	if(rc == -1){
+		back_off(record);
+	}
 	printf("Read value at key %d: %d\n", key, record->val);
 	pthread_rwlock_unlock(&(record->rwlock));
 }
@@ -396,7 +407,9 @@ scan(void* argp){
 	record = search_record(key);
 	while (record != NULL){
 		int rc = pthread_rwlock_rdlock(&(record->rwlock));
-		if(rc == -1) ERR;
+		if(rc == -1){
+			back_off(record);
+		}
 		printf("Read value: %d at %d\n", record->val, key);
 		pthread_rwlock_unlock(&(record->rwlock));
 		record = record->next;
@@ -405,11 +418,6 @@ scan(void* argp){
 
 	return NULL;
 	
-}
-
-void
-back_off(){
-
 }
 //read or write random 
 // void *
@@ -443,7 +451,9 @@ main(int argc, char *argv[])
 		record = (DATA *)malloc(sizeof(DATA));
 		record->val = x;
 		int rc = pthread_rwlock_init(&(record->rwlock), NULL);
-		if(rc == -1) ERR;
+		if(rc == -1){
+			back_off(record);
+		} 
 		if (head == NULL){
 			head = record;
 			tail = record;

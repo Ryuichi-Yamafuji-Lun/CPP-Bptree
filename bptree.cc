@@ -407,6 +407,10 @@ scan(void* argp){
 	
 }
 
+void
+back_off(){
+
+}
 //read or write random 
 // void *
 // read_or_write(void *argp){

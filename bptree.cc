@@ -3,7 +3,7 @@
 #include <sys/time.h>
 
 #define num_threads 4
-#define num_of_data 10
+#define num_of_data 100
 
 struct timeval
 cur_time(void)

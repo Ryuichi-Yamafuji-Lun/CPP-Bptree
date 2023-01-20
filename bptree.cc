@@ -3,7 +3,7 @@
 #include <sys/time.h>
 
 #define num_threads 4
-#define num_of_data 100
+#define num_of_data 1000000
 
 struct timeval
 cur_time(void)
@@ -468,7 +468,7 @@ main(int argc, char *argv[])
 		x++;
   	}
 
-	int num_of_scans = 18;
+	int num_of_scans = 1000;
 
 	//n threads for updates
 	for(int i = 0; i < num_threads; i++) {
@@ -484,6 +484,6 @@ main(int argc, char *argv[])
 		pthread_join(thread_id[j], NULL);
 	}
 	end = cur_time();
-	printf("Time: %d seconds\n", end.tv_usec - begin.tv_usec);
+	printf("Time: %d milliseconds\n", end.tv_usec - begin.tv_usec);
 	return 0;
 }

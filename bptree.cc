@@ -419,21 +419,23 @@ scan(void* argp){
 	return NULL;
 	
 }
-//read or write random 
-// void *
-// read_or_write(void *argp){
-// 	int r_or_w = 1 + (rand() % num_of_data);
-	
-// 	if(r_or_w == 0){
-// 		//read
-// 		read_only();
-// 	} else {
-// 		//update
-// 		update_val();
-// 	}
-// 	return NULL;
-// }
 
+//read or write random 
+/*
+void *
+read_or_write(void *argp){
+	int r_or_w = 1 + (rand() % num_of_data);
+	
+	if(r_or_w == 0){
+		//read
+		read_only();
+	} else {
+		//update
+		update_val();
+	}
+	return NULL;
+}
+*/
 
 int
 main(int argc, char *argv[])

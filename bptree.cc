@@ -405,12 +405,12 @@ scan(void* argp){
 	DATA *record;
 	int key = 0;
 	record = search_record(key);
-	while (record != NULL){
+	while (key <= *(int *)argp){
 		int rc = pthread_rwlock_rdlock(&(record->rwlock));
 		if(rc == -1){
 			back_off(record);
 		}
-		printf("Read value: %d at %d\n", record->val, key);
+		printf("Scan value: %d at %d\n", record->val, key);
 		pthread_rwlock_unlock(&(record->rwlock));
 		record = record->next;
 		key++;
@@ -468,12 +468,14 @@ main(int argc, char *argv[])
 		x++;
   	}
 
+	int num_of_scans = 18;
+
 	//n threads for updates
 	for(int i = 0; i < num_threads; i++) {
 		if (i != 0){
 			pthread_create(&thread_id[i], NULL, update_val, NULL);
 		} else {
-			pthread_create(&thread_id[i], NULL, scan, NULL);
+			pthread_create(&thread_id[i], NULL, scan, &num_of_scans);
 		}
 		
 	}
